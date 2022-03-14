@@ -37,6 +37,15 @@ housing %>%
 -   Pull out the records from DC in this new data frame. How many
     records are there from DC? Show the first 6 lines.
 
+``` r
+housing %>%
+  mutate(region = ifelse(State=="DC", "South", region))%>%
+  select(region, State, Land.Value, Date) %>%
+  filter(State == "DC")%>%
+  head(6) %>% 
+  kable()
+```
+
 | region | State | Land.Value |    Date |
 |:-------|:------|-----------:|--------:|
 | South  | DC    |     290522 | 2003.00 |
@@ -50,6 +59,17 @@ Answer: 153
 
 #### 1.2. Generate a tibble/dataframe that summarizes the mean land value of each region at each time point and show its first 6 lines
 
+``` r
+housing %>%
+  mutate(region = ifelse(State=="DC", "South", region))%>%
+  select(region, Land.Value, Date)%>%
+  group_by(region, Date) %>%
+  summarise_at(vars(Land.Value), funs(mean))%>%
+  rename('mean_land_value' = Land.Value) %>%
+  head(6) %>% 
+  kable()
+```
+
 | region  |    Date | mean_land_value |
 |:--------|--------:|----------------:|
 | Midwest | 1975.25 |        2452.167 |
@@ -60,6 +80,18 @@ Answer: 153
 | Midwest | 1976.50 |        3212.833 |
 
 #### 1.3 Using the tibble/dataframe from 1.2, plot the trend in mean land value of each region through time
+
+``` r
+gg_base = housing %>%
+  mutate(region = ifelse(State=="DC", "South", region))%>%
+  select(region, Land.Value, Date)%>%
+  group_by(region, Date) %>%
+  summarise_at(vars(Land.Value), funs(mean))%>%
+  rename('mean_land_value' = Land.Value)
+  
+ggplot(data = gg_base, aes(x = Date, y = mean_land_value))+
+  geom_line(aes(color = region))
+```
 
 ![](assignment-5_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
 
@@ -88,9 +120,24 @@ gapminder %>%
 
 #### 2.1 Use a scatterplot to explore the relationship between per capita GDP (gdpPercap) and life expectancy (lifeExp) in the year 2007.
 
+``` r
+gapminder %>%
+  filter(year == "2007") %>%
+  ggplot()+
+  geom_point(mapping = aes(x = gdpPercap, y = lifeExp))
+```
+
 ![](assignment-5_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
 #### 2.2 Add a smoothing line to the previous plot.
+
+``` r
+gapminder %>%
+  filter(year == "2007") %>%
+  ggplot(aes(x = gdpPercap, y = lifeExp))+
+  geom_point()+
+  geom_smooth(color = "blue")
+```
 
 ![](assignment-5_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
 
@@ -100,17 +147,48 @@ Note: only two Oceanian countries are included in this dataset, and
 geom_smooth() does not work with two data points, which is why they are
 excluded.
 
+``` r
+gapminder %>%
+  filter(year == "2007", continent!= "Oceania") %>%
+  ggplot(aes(x = gdpPercap, y = lifeExp))+
+  geom_point(aes(color=continent))+
+  geom_smooth(se=FALSE, aes(color = continent))
+```
+
 ![](assignment-5_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
 #### 2.4 Use faceting to solve the same problem. Include the confidence intervals in this plot.
+
+``` r
+gapminder %>%
+  filter(year == "2007", continent!= "Oceania") %>%
+  ggplot(aes(x = gdpPercap, y = lifeExp))+
+  geom_point(aes(color=continent))+
+  geom_smooth(aes(color = continent))+
+  facet_wrap(~continent, ncol = 2)
+```
 
 ![](assignment-5_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
 
 #### 2.5 Explore the trend in life expectancy through time in each continent. Color by continent.
 
+``` r
+gapminder %>%
+  ggplot(aes(x = year, y = lifeExp, color = continent))+
+  geom_line(aes(group = country))+
+  facet_wrap(~continent, ncol = 3)
+```
+
 ![](assignment-5_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
 
 #### 2.6 From the previous plot, we see some abnormal trends in Asia and Africa, where the the life expectancy in some countries sharply dropped at certain time periods. Here, we look into what happened in Asia in more detail. First, create a new dataset by filtering only the Asian countries. Show the first 6 lines of this filtered dataset.
+
+``` r
+gapminder %>%
+  filter(continent== "Asia")%>%
+  head(6) %>% 
+  kable()
+```
 
 | country     | continent | year | lifeExp |      pop | gdpPercap |
 |:------------|:----------|-----:|--------:|---------:|----------:|
@@ -125,4 +203,22 @@ excluded.
 
 Answer: Cambodian civil war, The Great Chinese Famine, Iraq war
 
-![](assignment-5_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->![](assignment-5_files/figure-gfm/unnamed-chunk-12-2.png)<!-- -->
+``` r
+gapminder %>%
+  filter(continent== "Asia")%>%
+  ggplot(aes(x = year, y = lifeExp))+
+  geom_line()+
+  facet_wrap(~country, ncol = 3)
+```
+
+![](assignment-5_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+
+``` r
+gapminder %>%
+  filter(country %in% c("Iraq", "China", "Cambodia")) %>% 
+  ggplot(aes(x = year, y = lifeExp))+
+  geom_line()+
+  facet_wrap(~country, ncol = 3)
+```
+
+![](assignment-5_files/figure-gfm/unnamed-chunk-12-2.png)<!-- -->
